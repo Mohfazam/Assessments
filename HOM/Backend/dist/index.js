@@ -82,6 +82,39 @@ app.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
     }
 }));
+app.get("/hotels", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const hotels = yield models_1.HotelModel.find();
+        res.status(200).json(hotels);
+    }
+    catch (error) {
+        res.status(500).json({
+            message: "Error fetching Hotels"
+        });
+    }
+}));
+app.post("/hotels", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username, hotelName, price, location } = req.body;
+    const user = yield models_1.UserModel.findOne({ username });
+    if (!user) {
+        return res.status(404).json({ message: "User Not Found" });
+    }
+    if (!user.isAdmin) {
+        user.isAdmin = true;
+        yield user.save();
+    }
+    try {
+        const hotel = yield models_1.HotelModel.create({ name: hotelName, price: price, location: location, owner: user._id });
+        res.status(201).json({
+            message: "Hotel added successfully", hotel
+        });
+    }
+    catch (error) {
+        res.status(400).json({
+            message: "Error Adding Hotel", error
+        });
+    }
+}));
 app.listen(3000, () => {
     console.log("Server Started at port 3000");
 });
