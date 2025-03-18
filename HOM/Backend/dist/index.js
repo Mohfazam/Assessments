@@ -17,8 +17,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const models_1 = require("./models/models");
 const cors_1 = __importDefault(require("cors"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+// dotenv.config();
 const env = require("dotenv").config();
 const MONGO_URL = process.env.MONGO_URL;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -113,6 +112,98 @@ app.post("/hotels", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         res.status(400).json({
             message: "Error Adding Hotel", error
         });
+    }
+}));
+app.put("/hotels/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { username, hotelName, price, location } = req.body;
+    const user = yield models_1.UserModel.findOne({ username });
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
+    if (!user.isAdmin) {
+        return res.status(403).json({
+            message: "Access Denied: Admins Only"
+        });
+    }
+    try {
+        const updatedHotel = yield models_1.HotelModel.findByIdAndUpdate(id, { name: hotelName, price, location }, { new: true });
+        if (!updatedHotel) {
+            return res.status(404).json({ message: "Hotel not Found" });
+        }
+        res.status(200).json({
+            message: "Hotels Updated Successfully", updatedHotel
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            message: "Error Updating Hotel", error
+        });
+    }
+}));
+app.delete("/hotels/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { username } = req.body;
+    const user = yield models_1.UserModel.findOne({ username });
+    if (!user) {
+        return res.status(404).json({ message: "User Not Found" });
+    }
+    if (!user.isAdmin) {
+        return res.status(403).json({ message: "Access Denied: Admins Only" });
+    }
+    try {
+        const deletedHotel = yield models_1.HotelModel.findByIdAndDelete(id);
+        if (!deletedHotel) {
+            return res.status(404).json({ message: "Hotel Not Found" });
+        }
+        res.status(200).json({ message: "Hotel Deleted Successfully" });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Error Deleting Hotel", error });
+    }
+}));
+app.post("/book-hotel", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username, hotelId, checkIn, checkOut } = req.body;
+    const user = yield models_1.UserModel.findOne({ username });
+    const hotel = yield models_1.HotelModel.findById(hotelId);
+    if (!user) {
+        return res.status(404).json({ message: "User Not Found" });
+    }
+    if (!hotel) {
+        return res.status(404).json({ message: "Hotel Not Found" });
+    }
+    try {
+        const booking = yield models_1.BookingModel.create({
+            user: user._id,
+            hotel: hotel._id,
+            checkIn,
+            checkOut,
+        });
+        res.status(201).json({ message: "Hotel Booked Successfully", booking });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Error Booking Hotel", error });
+    }
+}));
+app.get("/admin-dashboard", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username } = req.body;
+    const user = yield models_1.UserModel.findOne({ username });
+    if (!user) {
+        return res.status(404).json({ message: "User Not Found" });
+    }
+    if (!user.isAdmin) {
+        return res.status(403).json({ message: "Access Denied: Admins Only" });
+    }
+    try {
+        const users = yield models_1.UserModel.find();
+        const hotels = yield models_1.HotelModel.find();
+        const bookings = yield models_1.BookingModel.find().populate("user hotel");
+        res.status(200).json({ users, hotels, bookings });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Error Fetching Admin Data", error });
     }
 }));
 app.listen(3000, () => {

@@ -1,4 +1,3 @@
-import { Hotel } from "lucide-react";
 import mongoose, {model, Schema} from "mongoose";
 
 const UserSchema = new Schema({
@@ -26,7 +25,7 @@ export const HotelModel = mongoose.model("Hotel", hotelSchema);
 
 const bookingSchema = new mongoose.Schema({
     user: {type: mongoose.Schema.Types.ObjectId, ref:'User', required: true},
-    Hotel: {type: mongoose.Schema.Types.ObjectId, ref:"Hotel", required: true},
+    hotel: {type: mongoose.Schema.Types.ObjectId, ref:"Hotel", required: true},
     checkIn: { type: Date, required: true },
     checkOut: { type: Date, required: true },
     guests: { type: Number, required: true },

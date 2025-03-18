@@ -55,7 +55,7 @@ const hotelSchema = new mongoose_1.default.Schema({
 exports.HotelModel = mongoose_1.default.model("Hotel", hotelSchema);
 const bookingSchema = new mongoose_1.default.Schema({
     user: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'User', required: true },
-    Hotel: { type: mongoose_1.default.Schema.Types.ObjectId, ref: "Hotel", required: true },
+    hotel: { type: mongoose_1.default.Schema.Types.ObjectId, ref: "Hotel", required: true },
     checkIn: { type: Date, required: true },
     checkOut: { type: Date, required: true },
     guests: { type: Number, required: true },

@@ -1,11 +1,11 @@
 import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import {UserModel, HotelModel} from "./models/models"
+import {UserModel, HotelModel, BookingModel} from "./models/models"
 
 import cors from "cors";
 import mongoose from "mongoose"
 import dotenv from "dotenv";
-dotenv.config();
+// dotenv.config();
 
 const env = require("dotenv").config();
 
@@ -157,7 +157,88 @@ app.put("/hotels/:id", async(req: any, res: any) => {
             message: "Error Updating Hotel", error
         });
     }
-})
+});
+
+app.delete("/hotels/:id", async (req: any, res: any) => {
+    const { id } = req.params;
+    const { username } = req.body;  
+
+    const user = await UserModel.findOne({ username });
+
+    if (!user) {
+        return res.status(404).json({ message: "User Not Found" });
+    }
+
+    if (!user.isAdmin) {
+        return res.status(403).json({ message: "Access Denied: Admins Only" });
+    }
+
+    try {
+        const deletedHotel = await HotelModel.findByIdAndDelete(id);
+
+        if (!deletedHotel) {
+            return res.status(404).json({ message: "Hotel Not Found" });
+        }
+
+        res.status(200).json({ message: "Hotel Deleted Successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error Deleting Hotel", error });
+    }
+});
+
+app.post("/book-hotel", async (req: any, res: any) => {
+    const { username, hotelId, checkIn, checkOut } = req.body;
+
+    const user = await UserModel.findOne({ username });
+    const hotel = await HotelModel.findById(hotelId);
+
+    if (!user) {
+        return res.status(404).json({ message: "User Not Found" });
+    }
+
+    if (!hotel) {
+        return res.status(404).json({ message: "Hotel Not Found" });
+    }
+
+    try {
+        const booking = await BookingModel.create({
+            user: user._id,
+            hotel: hotel._id,
+            checkIn,
+            checkOut,
+        });
+
+        res.status(201).json({ message: "Hotel Booked Successfully", booking });
+    } catch (error) {
+        res.status(500).json({ message: "Error Booking Hotel", error });
+    }
+});
+
+app.get("/admin-dashboard", async (req: any, res: any) => {
+    const { username } = req.body;
+    const user = await UserModel.findOne({ username });
+
+    if (!user) {
+        return res.status(404).json({ message: "User Not Found" });
+    }
+
+    if (!user.isAdmin) {
+        return res.status(403).json({ message: "Access Denied: Admins Only" });
+    }
+
+    try {
+        const users = await UserModel.find();
+        const hotels = await HotelModel.find();
+        const bookings = await BookingModel.find().populate("user hotel");
+
+        res.status(200).json({ users, hotels, bookings });
+    } catch (error) {
+        res.status(500).json({ message: "Error Fetching Admin Data", error });
+    }
+});
+
+
+
 
 app.listen(3000, () => {
     console.log("Server Started at port 3000");
