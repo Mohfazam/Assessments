@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const models_1 = require("./models/models");
 const cors_1 = __importDefault(require("cors"));
 const mongoose_1 = __importDefault(require("mongoose"));
@@ -20,6 +21,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const env = require("dotenv").config();
 const MONGO_URL = process.env.MONGO_URL;
+const JWT_SECRET = process.env.JWT_SECRET;
 console.log("MONGO_URL: ", MONGO_URL);
 mongoose_1.default.connect(MONGO_URL).then(() => {
     console.log("Connected To MongoDB!");
@@ -48,6 +50,35 @@ app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     catch (e) {
         res.status(411).json({
             message: "User already Exists"
+        });
+    }
+}));
+app.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const username = req.body.username;
+    const password = req.body.password;
+    try {
+        const user = yield models_1.UserModel.findOne({
+            username: username,
+            password: password
+        });
+        if (!user) {
+            return res.status(400).json({
+                Message: "Invalid Username or Password"
+            });
+        }
+        const token = jsonwebtoken_1.default.sign({
+            username: user.username
+        }, JWT_SECRET);
+        res.status(200).json({
+            Message: "Login Successful",
+            token,
+            username: user.username,
+            isAdmin: user.isAdmin
+        });
+    }
+    catch (e) {
+        res.status(411).json({
+            msg: "Something went wrong"
         });
     }
 }));

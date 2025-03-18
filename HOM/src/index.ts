@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import {UserModel} from "./models/models"
 
@@ -6,7 +6,6 @@ import cors from "cors";
 import mongoose from "mongoose"
 import dotenv from "dotenv";
 dotenv.config();
-
 
 const env = require("dotenv").config();
 
@@ -24,7 +23,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.post("/signup", async(req, res) => {
+app.post("/signup", async(req: Request, res: Response) => {
     const username = req.body.username;
     const email = req.body.email;
     const password = req.body.password;
@@ -48,7 +47,7 @@ app.post("/signup", async(req, res) => {
     }
 });
 
-app.post("/signin", async (req, res) => {
+app.post("/signin", async (req: any, res: any) => {
     const username = req.body.username;
     const password = req.body.password;
 
