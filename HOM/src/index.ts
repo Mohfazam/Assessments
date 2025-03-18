@@ -11,6 +11,7 @@ dotenv.config();
 const env = require("dotenv").config();
 
 const MONGO_URL = process.env.MONGO_URL as string;
+const JWT_SECRET = process.env.JWT_SECRET as string;
 console.log("MONGO_URL: ", MONGO_URL);
 
 mongoose.connect(MONGO_URL).then(() => {
@@ -46,6 +47,40 @@ app.post("/signup", async(req, res) => {
         });
     }
 });
+
+app.post("/signin", async (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    try{
+        const user = await UserModel.findOne({
+            username: username,
+            password: password
+        });
+
+        if(!user){
+                return res.status(400).json({
+                    Message: "Invalid Username or Password"
+                });
+        }
+
+        const token = jwt.sign({
+            username: user.username
+        }, JWT_SECRET);
+
+        res.status(200).json({
+            Message: "Login Successful",
+            token,
+            username:user.username,
+            isAdmin: user.isAdmin
+        });
+
+    } catch(e){
+        res.status(411).json({
+            msg: "Something went wrong"
+        })
+    }
+})
 
 app.listen(3000, () => {
     console.log("Server Started at port 3000");
