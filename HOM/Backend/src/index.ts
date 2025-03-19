@@ -187,34 +187,48 @@ app.delete("/hotels/:id", async (req: any, res: any) => {
 });
 
 app.post("/book-hotel", async (req: any, res: any) => {
-    const { username, hotelId, checkIn, checkOut } = req.body;
-
-    const user = await UserModel.findOne({ username });
-    const hotel = await HotelModel.findById(hotelId);
-
-    if (!user) {
-        return res.status(404).json({ message: "User Not Found" });
-    }
-
-    if (!hotel) {
-        return res.status(404).json({ message: "Hotel Not Found" });
-    }
-
     try {
+        const { username, hotelId, checkIn, checkOut, guests } = req.body;
+
+        // Add validation for guests
+        if (!guests || isNaN(guests) || guests < 1) {
+            return res.status(400).json({
+                message: "Invalid number of guests"
+            });
+        }
+
+        const user = await UserModel.findOne({ username });
+        const hotel = await HotelModel.findById(hotelId);
+
+        if (!user || !hotel) {
+            return res.status(404).json({ 
+                message: "User or Hotel not found" 
+            });
+        }
+
         const booking = await BookingModel.create({
             user: user._id,
             hotel: hotel._id,
-            checkIn,
-            checkOut,
+            checkIn: new Date(checkIn),
+            checkOut: new Date(checkOut),
+            guests: Number(guests) // Ensure numeric conversion
         });
 
-        res.status(201).json({ message: "Hotel Booked Successfully", booking });
+        res.status(201).json({ 
+            message: "Hotel Booked Successfully", 
+            booking 
+        });
+
     } catch (error) {
-        res.status(500).json({ message: "Error Booking Hotel", error });
+        console.error("Booking Error:", error);
+        res.status(500).json({
+            message: "Error Booking Hotel",
+            error: error
+        });
     }
 });
 
-app.get("/admin-dashboard", async (req: any, res: any) => {
+app.post("/admin-dashboard", async (req: any, res: any) => {
     const { username } = req.body;
     const user = await UserModel.findOne({ username });
 

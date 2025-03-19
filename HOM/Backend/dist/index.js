@@ -165,29 +165,42 @@ app.delete("/hotels/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 }));
 app.post("/book-hotel", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username, hotelId, checkIn, checkOut } = req.body;
-    const user = yield models_1.UserModel.findOne({ username });
-    const hotel = yield models_1.HotelModel.findById(hotelId);
-    if (!user) {
-        return res.status(404).json({ message: "User Not Found" });
-    }
-    if (!hotel) {
-        return res.status(404).json({ message: "Hotel Not Found" });
-    }
     try {
+        const { username, hotelId, checkIn, checkOut, guests } = req.body;
+        // Add validation for guests
+        if (!guests || isNaN(guests) || guests < 1) {
+            return res.status(400).json({
+                message: "Invalid number of guests"
+            });
+        }
+        const user = yield models_1.UserModel.findOne({ username });
+        const hotel = yield models_1.HotelModel.findById(hotelId);
+        if (!user || !hotel) {
+            return res.status(404).json({
+                message: "User or Hotel not found"
+            });
+        }
         const booking = yield models_1.BookingModel.create({
             user: user._id,
             hotel: hotel._id,
-            checkIn,
-            checkOut,
+            checkIn: new Date(checkIn),
+            checkOut: new Date(checkOut),
+            guests: Number(guests) // Ensure numeric conversion
         });
-        res.status(201).json({ message: "Hotel Booked Successfully", booking });
+        res.status(201).json({
+            message: "Hotel Booked Successfully",
+            booking
+        });
     }
     catch (error) {
-        res.status(500).json({ message: "Error Booking Hotel", error });
+        console.error("Booking Error:", error);
+        res.status(500).json({
+            message: "Error Booking Hotel",
+            error: error
+        });
     }
 }));
-app.get("/admin-dashboard", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/admin-dashboard", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username } = req.body;
     const user = yield models_1.UserModel.findOne({ username });
     if (!user) {
